@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ROOT="$(realpath "$(dirname "$0")")"
 
-T1_DIR="$(realpath "${ROOT}/t1-mstp_metrics")"
+T1_DIR="$(realpath "${ROOT}/t1-mstp-metrics")"
 T2_DIR="$(realpath "${ROOT}/t2-covert-udiv")"
 T3_DIR="$(realpath "${ROOT}/t3-covert-inst")"
 T4_DIR="$(realpath "${ROOT}/t4-covert-cache")"

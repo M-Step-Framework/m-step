@@ -209,7 +209,7 @@ cd evaluation
 
 | Test | Command | Paper Reference |
 |------|---------|-----------------|
-| M-Step Metrics | `./evaluation/t1-mstp_metrics/1-run-test.sh` | Table 5 |
+| M-Step Metrics | `./evaluation/t1-mstp-metrics/1-run-test.sh` | Table 5 |
 | DIV Instruction Covert Channel | `./evaluation/t2-covert-udiv/1-run-test.sh` | Figure 6a |
 | Instruction Timing Covert Channel | `./evaluation/t3-covert-inst/1-run-test.sh` | Figure 6b |
 | ICache-based Covert Channel | `./evaluation/t4-covert-cache/1-run-test.sh` | Figure 6c |

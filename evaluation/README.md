@@ -16,7 +16,7 @@ evaluation/
 │   ├── 1-draw-graphs.sh    # Generate all paper figures
 │   ├── patterns/           # Pre-computed pattern data
 │   └── scripts/            # Python plotting scripts
-├── t1-mstp_metrics/        # M-Step performance metrics (Table 5)
+├── t1-mstp-metrics/        # M-Step performance metrics (Table 5)
 ├── t2-covert-udiv/         # Division timing channel (Fig. 6a)
 ├── t3-covert-inst/         # Instruction timing channel (Fig. 6b)
 ├── t4-covert-cache/        # Cache timing channel (Fig. 6c)
@@ -55,7 +55,7 @@ cd evaluation
 
 | Paper Result | Test Directory | Script | Output |
 |--------------|----------------|--------|--------|
-| **Table 5** (M-Step Metrics)  | `t1-mstp_metrics/`| `1-run-test.sh`   | Results on the terminal. |
+| **Table 5** (M-Step Metrics)  | `t1-mstp-metrics/`| `1-run-test.sh`   | Results on the terminal. |
 | **Figure 6a** (Division)      | `t2-covert-udiv/` | `1-run-test.sh`   | `logs/06-div.png` |
 | **Figure 6b** (Instructions)  | `t3-covert-inst/` | `1-run-test.sh`   | `logs/06-inst_diff.png` |
 | **Figure 6c** (Cache)         | `t4-covert-cache/`| `1-run-test.sh`   | `logs/06-cache.png` |
@@ -72,7 +72,7 @@ cd evaluation
 Measures the overhead and accuracy of the M-Step single-stepping mechanism.
 
 ```bash
-cd t1-mstp_metrics
+cd t1-mstp-metrics
 ./1-run-test.sh
 ```
 
