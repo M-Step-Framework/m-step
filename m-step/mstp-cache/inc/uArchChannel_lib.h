@@ -2,7 +2,7 @@
 #define U_ARCH_CHANNEL_LIB_H
 
 #include <stdint.h>
-  
+
 #define SYSTICK_AVAILABLE
 
 //------------------------------------------------------------------------------
@@ -17,7 +17,7 @@
 #define I_REPLACEMENT_POLICY PLRU
 
 //------------------------------------------------------------------------------
-// PRIME+PROBE Fucntions
+// Prime+Probe Functions
 //------------------------------------------------------------------------------
 void prime();
 void prime_2();
@@ -31,9 +31,9 @@ void prime_2();
 #endif
 
 //------------------------------------------------------------------------------
-// Trojan Fucntions
+// Trojan Functions
 //------------------------------------------------------------------------------
-// touch_s uses the same block of jumps of the prime 1 
+// touch_s uses the same block of jumps of the prime 1
 void touch_s(uint8_t secret);
 // touch_ns uses the same block of jumps of the prime 2
 void touch_ns(uint8_t secret);

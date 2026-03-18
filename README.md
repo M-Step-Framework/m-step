@@ -34,7 +34,7 @@ M-Step exploits the interrupt mechanism in ARM Cortex-M processors to achieve si
 - **Core M-Step Algorithm**: Precise timer-based interrupt injection for single-stepping
 - **Side-Channel Primitives**: Multiple observation channels including:
   - `Mstp-Nemesis`: Reveals interrupt-latencies, Nemesis.
-  - `Mstp-Cache`: Reveals cache activity, PRIME+PROVE.
+  - `Mstp-Cache`: Reveals cache activity, Prime+Probe.
   - `Mstp-BUSted`: Reveals memory accesses, BUSted.
   - `Mstp-Zoom`: Amplifies interrupt-latency leakage.
 - **Analysis Tools**: Trace visualization, VCD generation for GTKWave, and automated key extraction
@@ -306,7 +306,7 @@ M-Step supports multiple features which can be enabled on demand via plugins:
 | Plugin | Location | Description |
 | :--- | :--- | :--- |
 | **Mstp-Nemesis**  | `m-step/mstp`         | Reveals interrupt-latencies, Nemesis [57]. |
-| **Mstp-Cache**    | `m-step/mstp-cache`   | Reveals cache activity, PRIME+PROBE [40, 42]. |
+| **Mstp-Cache**    | `m-step/mstp-cache`   | Reveals cache activity, Prime+Probe [40, 42]. |
 | **Mstp-BUSted**   | `m-step/mstp-busted`  | Reveals memory accesses, BUSted [46]. |
 
 #### M-Step Architectural Plugins
