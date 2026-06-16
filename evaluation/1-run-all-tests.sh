@@ -7,11 +7,19 @@ T3_DIR="$(realpath "${ROOT}/t3-covert-inst")"
 T4_DIR="$(realpath "${ROOT}/t4-covert-cache")"
 T5_DIR="$(realpath "${ROOT}/t5-covert-cont")"
 T6_DIR="$(realpath "${ROOT}/t6_pocs")"
+T7_DIR="$(realpath "${ROOT}/t7-printf-gtkwave")"
 
 # Static Configuration Values
 CLEAN=false
 TIMING=false
 TIMING_LOG="${ROOT}/log_test_timing.txt"
+
+#-------------------------------------------------------------------------------
+# Functions
+#-------------------------------------------------------------------------------
+show_usage() {
+    echo "Usage: $0 [-c|--clean] [-ti|--time]"
+}
 
 #-------------------------------------------------------------------------------
 # Parse arguments
@@ -29,12 +37,12 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo "Usage: $0 [-c|--clean] [-ti|--time]"
+            show_usage
             exit 0
             ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: $0 [-c|--clean] [-ti|--time]"
+            show_usage
             exit 1
             ;;
     esac
@@ -51,6 +59,7 @@ if [ "$CLEAN" = true ]; then
     ${T4_DIR}/1-run-test.sh -c
     ${T5_DIR}/1-run-test.sh -c
     ${T6_DIR}/1-run-pocs.sh -c
+    ${T7_DIR}/1-run-test.sh -c
     rm -rf "${TIMING_LOG}" || true
     echo "Clean completed."
     exit 0
@@ -63,7 +72,7 @@ if [ "$TIMING" = true ]; then
     echo "======================================" >> "${TIMING_LOG}"
 fi
 
-# Run tests with optional timing
+Run tests with optional timing
 if [ "$TIMING" = true ]; then start_time=$(date +%s); fi
 ${T1_DIR}/1-run-test.sh
 if [ "$TIMING" = true ]; then
@@ -116,6 +125,15 @@ if [ "$TIMING" = true ]; then
     elapsed=$((end_time - start_time))
     minutes=$((elapsed / 60))
     echo "T6 (pocs): ${elapsed} seconds (${minutes} min)" >> "${TIMING_LOG}"
+fi
+
+if [ "$TIMING" = true ]; then start_time=$(date +%s); fi
+${T7_DIR}/1-run-test.sh
+if [ "$TIMING" = true ]; then
+    end_time=$(date +%s)
+    elapsed=$((end_time - start_time))
+    minutes=$((elapsed / 60))
+    echo "T7 (printf-gtkwave): ${elapsed} seconds (${minutes} min)" >> "${TIMING_LOG}"
 fi
 
 if [ "$TIMING" = true ]; then
