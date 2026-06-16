@@ -92,7 +92,7 @@ cd t2-covert-udiv
 - `logs/0_raw_trace.txt`: Raw trace from the board
 - `logs/1_results.txt`: Processed timing differences
 - `logs/06-div.txt`: Matrix data for figure generation
-- `logs/06-div.png`: Generated heatmap figure
+- `logs/06-div_matrix.png`: Generated heatmap figure
 
 ### T3: Instruction Timing Channel (Figure 6b)
 
@@ -106,7 +106,7 @@ cd t3-covert-inst
 **Outputs:**
 - `logs/0_raw_trace.txt`: Raw trace from the board
 - `logs/06-inst_diff.txt`: Matrix data
-- `logs/06-inst_diff.png`: Generated figure
+- `logs/06-inst_diff_matrix.png`: Generated figure
 
 ### T4: Cache Timing Channel (Figure 6c)
 
@@ -120,7 +120,7 @@ cd t4-covert-cache
 **Outputs:**
 - `logs/0_raw_trace.txt`: Raw trace from the board
 - `logs/06-cache.txt`: Matrix data
-- `logs/06-cache.png`: Generated figure
+- `logs/06-cache_matrix.png`: Generated figure
 
 ### T5: Bus Contention Channel (Figure 6d)
 
@@ -134,7 +134,7 @@ cd t5-covert-cont
 **Outputs:**
 - `logs/0_raw_trace.txt`: Raw trace from the board
 - `logs/06-contention.txt`: Matrix data
-- `logs/06-contention.png`: Generated figure
+- `logs/06-contention_matrix.png`: Generated figure
 
 ### T6: Proof-of-Concept Attacks (Section 6.3)
 
