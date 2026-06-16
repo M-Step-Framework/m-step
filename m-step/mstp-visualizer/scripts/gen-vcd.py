@@ -4,6 +4,24 @@ import re
 import subprocess
 import os
 
+# ANSI color codes
+class C:
+    RESET   = "\033[0m"
+    BOLD    = "\033[1m"
+    CYAN    = "\033[36m"
+    GREEN   = "\033[32m"
+    YELLOW  = "\033[33m"
+    RED     = "\033[31m"
+    MAGENTA = "\033[35m"
+    DIM     = "\033[2m"
+
+def _key(text):   return f"{C.CYAN}{text}{C.RESET}"
+def _val(text):   return f"{C.YELLOW}{text}{C.RESET}"
+def _ok(text):    return f"{C.GREEN}{text}{C.RESET}"
+def _err(text):   return f"{C.RED}{C.BOLD}{text}{C.RESET}"
+def _head(text):  return f"{C.BOLD}{C.MAGENTA}{text}{C.RESET}"
+def _dim(text):   return f"{C.GREEN}{text}{C.RESET}"
+
 # Basic VCD header template
 header = """$date
     {date}
@@ -154,11 +172,12 @@ def disassemble_elf(elf_file):
     addr_to_function = {}
     
     if not os.path.exists(elf_file):
-        print(f"Error: ELF file {elf_file} not found")
+        print(_err(f"  Error: ELF file '{elf_file}' not found"))
         return addr_to_instr, addr_to_function
     
     try:
-        print(f"Running arm-none-eabi-objdump on {elf_file}")
+        print(f"\n{_head('2 - Disassembly Target Elf:')}")
+        print(f"  {_key('Objdump:')} {_val(elf_file)}")
         result = subprocess.run(['arm-none-eabi-objdump', '-d', elf_file], 
                                capture_output=True, text=True, check=True)
         
@@ -221,16 +240,21 @@ def disassemble_elf(elf_file):
                         continue
                         
     except subprocess.CalledProcessError as e:
-        print(f"Error: Failed to run arm-none-eabi-objdump on {elf_file}")
-        print(f"Make sure arm-none-eabi-objdump is installed and in your PATH")
-        print(f"Error details: {e}")
+        print(_err(f"  Error: arm-none-eabi-objdump failed on '{elf_file}'"))
+        print(_err( "  Make sure arm-none-eabi-objdump is installed and in your PATH"))
+        print(f"  {_key('Details:')} {e}")
         return addr_to_instr, addr_to_function
     except FileNotFoundError:
-        print("Error: arm-none-eabi-objdump not found")
-        print("Please install the ARM GNU Toolchain and ensure arm-none-eabi-objdump is in your PATH")
+        print(_err("  Error: arm-none-eabi-objdump not found"))
+        print(_err("  Please install the ARM GNU Toolchain and ensure it is in your PATH"))
         return addr_to_instr, addr_to_function
     
-    print(f"Successfully extracted {len(addr_to_instr)} instructions and {len(set(addr_to_function.values()))} functions")
+    n_instr = len(addr_to_instr)
+    n_func  = len(set(addr_to_function.values()))
+    print(f"  {_key('Instructions:')} {C.BOLD}{C.YELLOW}{n_instr}{C.RESET}")
+    print(f"  {_key('Functions:')} {C.BOLD}{C.YELLOW}{n_func}{C.RESET}")
+
+    
     return addr_to_instr, addr_to_function
 
 def parse_instruction(instruction):
@@ -325,35 +349,40 @@ def create_translation_tables(trace_data, addr_to_instr, addr_to_function, outpu
             else:
                 f.write(f"{addr:08x} UNKNOWN_FUNC\n")
     
-    print(f"Created translation tables in {output_dir}:")
-    print(f"  1. {table_prefix}_full.tbl - Full instructions with operands and comments")
-    print(f"  2. {table_prefix}_raw.tbl - Raw instructions without comments/annotations")
-    print(f"  3. {table_prefix}_mnemonic.tbl - Instruction mnemonics only")
-    print(f"  4. {table_prefix}_operands.tbl - Raw operands only (without comments)")
-    print(f"  5. {table_prefix}_function.tbl - Function names only")
-    print(f"Total entries: {len(unique_addrs)}")
-    print(f"Instructions found: {len([a for a in unique_addrs if a in addr_to_instr])}")
-    print(f"Functions found: {len([a for a in unique_addrs if a in addr_to_function])}")
+    n_entries = len(unique_addrs)
+    n_instr   = len([a for a in unique_addrs if a in addr_to_instr])
+    n_func    = len([a for a in unique_addrs if a in addr_to_function])
+    print(f"\n{_head('3 - Creating Translation Tables:')}")
+    print(f"  {_key('Output dir:')} {_val(output_dir)}")
+    print(f"  {_key('1.')} {_val(f'{table_prefix}_full.tbl')}      {_dim('full instructions with operands and comments')}")
+    print(f"  {_key('2.')} {_val(f'{table_prefix}_raw.tbl')}       {_dim('raw instructions without comments/annotations')}")
+    print(f"  {_key('3.')} {_val(f'{table_prefix}_mnemonic.tbl')}  {_dim('instruction mnemonics only')}")
+    print(f"  {_key('4.')} {_val(f'{table_prefix}_operands.tbl')}  {_dim('raw operands only')}")
+    print(f"  {_key('5.')} {_val(f'{table_prefix}_function.tbl')}  {_dim('function names only')}")
+    print(f"  {_key('Entries:')} {C.BOLD}{C.YELLOW}{n_entries}{C.RESET}")
+    print(f"  {_key('Instructions:')} {C.BOLD}{C.YELLOW}{n_instr}{C.RESET}")
+    print(f"  {_key('Functions:')} {C.BOLD}{C.YELLOW}{n_func}{C.RESET}")
+
     
     return {
-        'full': full_path,
-        'raw': raw_path,
-        'mnemonic': mnemonic_path,
-        'operands': operands_path,
-        'function': function_path
+        'full instructions': full_path,
+        'raw instructions': raw_path,
+        'mnemonics only': mnemonic_path,
+        'operands only': operands_path,
+        'function names only': function_path
     }
 
 def main():
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <trace_file> [elf_file] [--output-dir DIR] [--tables-dir DIR] [--vcd-name NAME] [--table-prefix PREFIX]")
-        print("  trace_file: File containing address/latency pairs")
-        print("  elf_file:   ELF binary for instruction disassembly (optional)")
-        print("  --output-dir DIR: Output directory for VCD file (default: ./outputs/)")
-        print("  --tables-dir DIR: Output directory for translation tables (default: ./gtkw_confs/)")
-        print("  --vcd-name NAME: VCD filename (default: trace.vcd)")
-        print("  --table-prefix PREFIX: Prefix for translation table files (default: inst_addr)")
-        print("\nExample:")
-        print(f"  {sys.argv[0]} trace.txt firmware.elf --output-dir ./my_results --tables-dir ./my_tables --vcd-name my_trace.vcd --table-prefix my_inst")
+        print(_head(f"Usage: {sys.argv[0]} <trace_file> [elf_file] [options]"))
+        print(f"  {_key('trace_file')}              File containing address/latency pairs")
+        print(f"  {_key('elf_file')}               ELF binary for instruction disassembly {_dim('(optional)')}")
+        print(f"  {_key('--output-dir')} {_val('DIR')}    Output directory for VCD file {_dim('(default: ./outputs/')}")
+        print(f"  {_key('--tables-dir')} {_val('DIR')}    Output directory for translation tables {_dim('(default: ./gtkw_confs/)')}")
+        print(f"  {_key('--vcd-name')}   {_val('NAME')}   VCD filename {_dim('(default: trace.vcd)')}")
+        print(f"  {_key('--table-prefix')} {_val('PREFIX')} Prefix for translation table files {_dim('(default: inst_addr)')}")
+        print(f"\n{_dim('Example:')}")
+        print(f"  {sys.argv[0]} {_val('trace.txt firmware.elf')} --output-dir {_val('./my_results')} --tables-dir {_val('./my_tables')} --vcd-name {_val('my_trace.vcd')} --table-prefix {_val('my_inst')}")
         sys.exit(1)
     
     # Parse command line arguments
@@ -388,19 +417,19 @@ def main():
                 elf_file = args[i]
             i += 1
     
-    print(f"Configuration:")
-    print(f"  Trace file: {trace_file}")
-    print(f"  ELF file: {elf_file if elf_file else 'None'}")
-    print(f"  Output directory: {output_dir}")
-    print(f"  Tables directory: {tables_dir}")
-    print(f"  VCD filename: {vcd_filename}")
-    print(f"  Table prefix: {table_prefix}")
+    print(_head("1 - Configuration:"))
+    print(f"  {_key('Trace file')}:      {_val(trace_file)}")
+    print(f"  {_key('ELF file')}:        {_val(elf_file if elf_file else 'None')}")
+    print(f"  {_key('Output dir')}:      {_val(output_dir)}")
+    print(f"  {_key('Tables dir')}:      {_val(tables_dir)}")
+    print(f"  {_key('VCD filename')}:    {_val(vcd_filename)}")
+    print(f"  {_key('Table prefix')}:    {_val(table_prefix)}")
     print()
     
     trace_data = parse_trace_file(trace_file)
     
     if not trace_data:
-        print(f"No valid trace data found in {trace_file}")
+        print(_err(f"No valid trace data found in {trace_file}"))
         sys.exit(1)
     
     # Extract latencies from trace data
@@ -413,13 +442,13 @@ def main():
     
     if elf_file:
         addr_to_instr, addr_to_function = disassemble_elf(elf_file)
-        print(f"Extracted {len(addr_to_instr)} instructions from {elf_file}")
         
         # Create multiple GTKWave translation tables
         translation_files = create_translation_tables(trace_data, addr_to_instr, addr_to_function, tables_dir, table_prefix)
         
     else:
-        print("No ELF file provided, skipping instruction disassembly")
+        print(f"\n{_head('2 - Disassembly Target Elf:')}")
+        print(_dim("  No ELF file provided, skipping instruction disassembly"))
     
     # Calculate total cycles needed
     total_cycles = sum(latencies) + 10
@@ -447,17 +476,18 @@ def main():
     
     vcd_path = create_vcd(clock, signals, output_dir, vcd_filename)
     
-    print(f"\nCreated VCD file: {vcd_path}")
-    print(f"Total instructions: {len(latencies)}")
-    print(f"Total cycles: {sum(latencies)}")
+    print(f"\n{_head('4 - VCD Generation:')}")
+    print(f"  {_key('Output:')}       {_val(vcd_path)}")
+    print(f"  {_key('Instructions:')} {C.BOLD}{C.YELLOW}{len(latencies)}{C.RESET}")
+    print(f"  {_key('Cycles:')}       {C.BOLD}{C.YELLOW}{sum(latencies)}{C.RESET}")
     
     if translation_files:
-        print(f"\nTo use translation tables in GTKWave:")
-        print("1. Right-click on 'instr_addr' signal")
-        print("2. Select 'Data Format' -> 'Translate Filter File' -> 'Enable and Select'")
-        print("3. Choose one of the translation files:")
+        print(f"\n{_head('5 - Using Generated Translation Tables in GTKWave:')}")
+        print(f"  {_key('1.')} Right-click on the {_key('instr_addr')} signal")
+        print(f"  {_key('2.')} Select {_key('Data Format')} {_dim('->')} {_key('Translate Filter File')} {_dim('->')} {_key('Enable and Select')}")
+        print(f"  {_key('3.')} Choose one of the generated translation files:")
         for table_type, file_path in translation_files.items():
-            print(f"   - {os.path.basename(file_path)} for {table_type} format")
+            print(f"       {_key('·')} {_val(os.path.basename(file_path))}  {_dim(table_type)}")
 
 if __name__ == "__main__":
     main()
