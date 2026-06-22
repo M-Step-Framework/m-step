@@ -11,8 +11,7 @@ func Eval(projectRoot string) {
 	if selected == "" {
 		color.New(color.FgYellow).Println("Evaluation cancelled.")
 	} else {
-		color.New(color.FgCyan).Printf(
-			"Running evaluation: %s\n\n", selected)
+		// color.New(color.FgCyan).Printf("Running evaluation: %s\n\n", selected)
 		if err := runExternalScript(
 				filepath.Join(projectRoot, ScriptDir, evalScript), selected); err != nil {
 			color.New(color.FgRed).Printf(

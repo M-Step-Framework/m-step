@@ -46,7 +46,6 @@ run_one() {
         return 1
     fi
 
-    echo "[INFO] Running ${selector}: ${test_script} $*"
     "${test_script}" "$@"
 }
 

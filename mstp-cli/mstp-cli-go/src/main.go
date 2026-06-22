@@ -24,6 +24,7 @@ const (
 func printHeader() {
 	asciiArt := figure.NewFigure(banner, "", true).String()
 	color.New(color.FgCyan, color.Bold).Print(asciiArt)
+	fmt.Println()
 	color.New(color.Faint).Println(welcomeMessage)
 	fmt.Println("Type /help for commands, or 'exit' to quit.")
 	fmt.Println()
