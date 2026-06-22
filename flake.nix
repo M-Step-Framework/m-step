@@ -17,8 +17,8 @@
           pkgs.cmake
           pkgs.gcc-arm-embedded-13
           pkgs.mcuboot-imgtool
-	  pkgs.gtkwave
-	  pkgs.jupyter
+          pkgs.gtkwave
+          pkgs.jupyter
       	];
 
         # Python packages
@@ -32,8 +32,12 @@
           py.ninja
           py.kconfiglib
           py.tkinter
-	  py.matplotlib
-	  py.pyserial
+          py.matplotlib
+          py.pyserial
+          # CLI tools
+          py.prompt-toolkit
+          py.rich
+          py.pyfiglet
       	]);
  
       in {
@@ -48,7 +52,7 @@
           shellHook = ''
            echo "ARM dev environment ready."
 	  
-	   # If fish exists, open it
+	        # If fish exists, open it
            if command -v fish &> /dev/null; then
              exec fish
            fi

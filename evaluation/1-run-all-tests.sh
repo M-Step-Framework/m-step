@@ -72,7 +72,7 @@ if [ "$TIMING" = true ]; then
     echo "======================================" >> "${TIMING_LOG}"
 fi
 
-Run tests with optional timing
+# Run tests with optional timing
 if [ "$TIMING" = true ]; then start_time=$(date +%s); fi
 ${T1_DIR}/1-run-test.sh
 if [ "$TIMING" = true ]; then

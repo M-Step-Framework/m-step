@@ -1,0 +1,48 @@
+
+============================================================
+Test run at 2026-06-22 07:01:08
+============================================================
+Hello NS World!!
+####################################################################
+####################################################################
+---------------------------------------
+Board Config: baord_setup_default
+Victim 0: test_baseline_s_tfm
+---------------------------------------
+R#0
+---------------------------------------
+Board Config: baord_setup_default
+Victim 1: test_ATO_inst_s_tfm
+---------------------------------------
+R#0
+---------------------------------------
+Board Config: baord_setup_default
+Victim 2: test_ICI_inst_s_tfm
+---------------------------------------
+R#0
+---------------------------------------
+Board Config: baord_setup_default
+Victim 3: test_IRI_inst_s_tfm
+---------------------------------------
+R#0
+---------------------------------------
+Board Config: baord_setup_default
+Victim 4: test_MIX_inst_s_tfm
+---------------------------------------
+R#0
+---------------------------------------
+Board Config: baord_setup_default
+Victim 5: test_printf_s_tfm
+---------------------------------------
+(USENIX SECURITY'26 Paper): Testing M-Step over a generic stdio.h lib printf.
+R#0
+                             :     Base	  Atomic	     ICI	     IRI	IRI_ATOM	  Printf
+Zero Steps    (Avg    1 runs):     7854	       0	   29337	    3719	   98996	     229
+Partial Steps (Avg    1 runs):      633	       0	    2334	       0	       0	      99
+Single Steps  (Avg    1 runs):      992	    1992	    1995	       3	    1999	    1305
+Inst Folding  (Avg    1 runs):       46	       0	       0	       0	       0	       3
+Multi Steps   (Avg    1 runs):        0	       0	       0	     146	       0	       0
+Interrupts    (Avg    1 runs):     9479	    1992	   33666	    3868	  100995	    1633
+Ratio         (Avg    1 runs):      171	    1000	     128	       0	      19	     859
+End NS World!!
+
