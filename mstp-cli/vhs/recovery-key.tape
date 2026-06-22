@@ -58,7 +58,7 @@
 #   ScrollDown[@<time>] [number]    Scroll terminal viewport down by rows
 
 # Setup the output file and look
-Output mstp-recovery.gif 
+Output output/mstp-recovery.gif 
 # Output frames-mstp-recovery/
 # Output mstp-recovery.mp4 
 Set FontSize 25

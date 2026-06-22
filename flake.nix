@@ -52,7 +52,7 @@
           shellHook = ''
            echo "ARM dev environment ready."
 	  
-	        # If fish exists, open it
+	         # If fish exists, open it
            if command -v fish &> /dev/null; then
              exec fish
            fi

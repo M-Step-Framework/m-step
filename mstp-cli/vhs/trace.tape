@@ -60,8 +60,8 @@
 #-------------------------------------------------------------------------------
 # Setup the output file and look
 #-------------------------------------------------------------------------------
-Output mstp-trace.gif 
-# Output mstp-trace.mp4 
+Output output/mstp-trace.gif 
+# Output output/mstp-trace.mp4 
 Set FontSize 25
 Set Width 1300
 Set Height 800
