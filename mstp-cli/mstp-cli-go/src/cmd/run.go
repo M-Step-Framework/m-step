@@ -8,7 +8,8 @@ import (
 
 func Run(projectRoot string) {
 	const runScript = "run.sh"
-	if err := runExternalScript(filepath.Join(projectRoot, ScriptDir, runScript)); err != nil {
+	if err := runExternalScript(
+		filepath.Join(projectRoot, ScriptDir, runScript)); err != nil {
 		color.New(color.FgRed).Println("Failed to run pipeline script:")
 		fmt.Printf("%v\n\n", err)
 	} else {

@@ -34,11 +34,14 @@ func newEvalStyles() evalStyles {
 	return s
 }
 
-// ----- list item (plain string) -----
+// ----- list item -----
 
-type evalItem string
+type evalItem struct {
+	value string
+	label string
+}
 
-func (i evalItem) FilterValue() string { return "" }
+func (i evalItem) FilterValue() string { return i.label }
 
 // ----- custom delegate -----
 
@@ -55,7 +58,7 @@ func (d evalDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf("%d. %s", index+1, string(it))
+	str := fmt.Sprintf("%d. %s", index+1, it.label)
 
 	fn := d.styles.item.Render
 	if index == m.Index() {
@@ -71,7 +74,8 @@ func (d evalDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 type evalModel struct {
 	list     list.Model
-	chosen   string // "" means not chosen yet
+	chosen   string // Return value, e.g. "t1"
+	chosenUI string // Display label, e.g. "t1-mstp-metrics"
 	styles   evalStyles
 	quitting bool
 }
@@ -94,7 +98,8 @@ func (m evalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if i, ok := m.list.SelectedItem().(evalItem); ok {
-				m.chosen = string(i)
+				m.chosen = i.value
+				m.chosenUI = i.label
 			}
 			return m, tea.Quit
 		}
@@ -107,7 +112,7 @@ func (m evalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m evalModel) View() string {
 	if m.chosen != "" {
-		return m.styles.quitText.Render(fmt.Sprintf("Running: %s", m.chosen))
+		return m.styles.quitText.Render(fmt.Sprintf("Running: %s", m.chosenUI))
 	}
 	if m.quitting {
 		return m.styles.quitText.Render("Evaluation cancelled.")
@@ -123,14 +128,14 @@ func (m evalModel) View() string {
 //	"" if the user cancelled (Esc / q / Ctrl+C).
 func runEvalSelector() string {
 	items := []list.Item{
-		evalItem("t1"),
-		evalItem("t2"),
-		evalItem("t3"),
-		evalItem("t4"),
-		evalItem("t5"),
-		evalItem("t6"),
-		evalItem("t7"),
-		evalItem("all"),
+		evalItem{value: "t1", label: "t1-mstp-metrics"},
+		evalItem{value: "t2", label: "t2-covert-udiv"},
+		evalItem{value: "t3", label: "t3-covert-inst"},
+		evalItem{value: "t4", label: "t4-covert-cache"},
+		evalItem{value: "t5", label: "t5-covert-cont"},
+		evalItem{value: "t6", label: "t6-pocs"},
+		evalItem{value: "t7", label: "t7-printf-gtkwave"},
+		evalItem{value: "all", label: "all-tests"},
 	}
 
 	const defaultWidth = 30
@@ -139,7 +144,7 @@ func runEvalSelector() string {
 	delegate := evalDelegate{styles: &styles}
 
 	l := list.New(items, delegate, defaultWidth, listHeight)
-	l.Title = "Run Evaluation"
+	l.Title = "Choose Evaluation Test to Run"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = styles.title
