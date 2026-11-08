@@ -104,6 +104,13 @@
 
     #define DEBUG_OFF   0
     #define DEBUG_ON    1
+
+    // Single toggle for all mstp configs. Default is debug:
+    //   DEBUG_ON  -> debug trace (PC-based, zero-steps dropped; analyze with no flag) [default]
+    //   DEBUG_OFF -> raw production trace (zero-steps kept; analyze with -r)
+    #ifndef MSTP_DEBUG
+        #define MSTP_DEBUG  DEBUG_ON
+    #endif
     
     // The NS is non-cacheable, and the M-Step is not tunning yet to deal with 
     // non-cacheable victim code (not all edge cases are covered). Our victims

@@ -9,6 +9,8 @@ NS_DIR="$(realpath "${NS}")"
 
 # Static Configuration Values
 CLEAN=false
+DEBUG_MODE=true # default is debug
+ANALYZE_FLAG="" # debug templates by default, set to -r for production mode
 
 #-------------------------------------------------------------------------------
 # Parse arguments
@@ -21,13 +23,28 @@ while [[ $# -gt 0 ]]; do
             CLEAN=true
             shift
             ;;
+        -d|--debug)
+            #Requires MSTP_DEBUG=DEBUG_ON (the default in src-poc/m-step/mstp/inc/mstp.h).
+            DEBUG_MODE=true
+            ANALYZE_FLAG=""
+            shift
+            ;;
+        -r|--raw)
+            # Requires building with MSTP_DEBUG=DEBUG_OFF (see src-poc/m-step/mstp/inc/mstp.h).
+            DEBUG_MODE=false
+            ANALYZE_FLAG="-r"
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [-c|--clean]"
+            echo "Usage: $0 [-c|--clean] [-d|--debug] [-r|--raw]"
+            echo "  (default)      debug trace; analyzed with debug templates"
+            echo "  -d, --debug    debug trace (default); needs MSTP_DEBUG=DEBUG_ON in mstp.h"
+            echo "  -r, --raw      production (raw) trace; set MSTP_DEBUG=DEBUG_OFF in mstp.h"
             exit 0
             ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: $0 [-c|--clean]"
+            echo "Usage: $0 [-c|--clean] [-d|--debug] [-r|--raw]"
             exit 1
             ;;
     esac
@@ -155,7 +172,9 @@ echo "#------------------------------------------------------------------------"
 # Get the generated key from  mbedtls key gen function
 grep -E '^\s*(p|q) =' ${TRACE_POC1}
 echo "#------------------------------------------------------------------------"
-${ANALYZER}/1-analyze-trace.sh -t ${TRACE_POC1}
+# In raw mode the analyzer auto-reads the PUBLIC modulus N from the trace header
+# (PoC1) to auto-correct rare single-step jitters. Debug does not need this
+${ANALYZER}/1-analyze-trace.sh ${ANALYZE_FLAG} -t ${TRACE_POC1}
 echo "#########################################################################"
 
 echo ""
@@ -165,7 +184,14 @@ echo "POC#2"
 echo "#------------------------------------------------------------------------"
 echo "Expected Private Key"
 echo "#------------------------------------------------------------------------"
-grep -E '^\s*(P|Q) =' ${MBEDTLS_DIR}/programs/pkey/rsa_priv.txt
+RSA_PRIV=${MBEDTLS_DIR}/programs/pkey/rsa_priv.txt
+grep -E '^\s*(P|Q) =' ${RSA_PRIV}
 echo "#------------------------------------------------------------------------"
-${ANALYZER}/1-analyze-trace.sh -t ${TRACE_POC2}
+# PoC2's trace has no key header, so in raw mode we supply the PUBLIC modulus N
+# from the key file for jitter correction.
+if [[ -n "${ANALYZE_FLAG}" ]]; then
+    ${ANALYZER}/1-analyze-trace.sh ${ANALYZE_FLAG} -t ${TRACE_POC2} --modulus-from ${RSA_PRIV}
+else
+    ${ANALYZER}/1-analyze-trace.sh ${ANALYZE_FLAG} -t ${TRACE_POC2}
+fi
 echo "#########################################################################"

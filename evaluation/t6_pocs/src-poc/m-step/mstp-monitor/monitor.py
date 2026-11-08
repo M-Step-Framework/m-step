@@ -14,10 +14,11 @@ from datetime import datetime
 
 # Configuration
 SERIAL_PORT = '/dev/ttyACM0'
-BAUD_RATE = 115200
+BAUD_RATE = 115200  # must match secure DEFAULT_UART_BAUDRATE and usart.c
 START_MARKER = "Hello NS World!!"
 END_MARKER = "End NS World!!"
 RESET_COMMAND = "STM32_Programmer_CLI -c port=SWD mode=UR"
+TIMEOUT = 60*60*24  # seconds to wait for end marker
 
 # Global verbosity level
 VERBOSITY = 1
@@ -46,7 +47,7 @@ def reset_board():
         return False
 
 def capture_uart_output(log_file):
-    """Capture UART output between markers and save to log file"""
+    """Capture UART output between markers, stream directly to log file, and keep terminal clean"""
     try:
         # Open serial port
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
@@ -62,48 +63,58 @@ def capture_uart_output(log_file):
         # Wait for start marker
         vprint(1, f"Waiting for start marker: '{START_MARKER}'")
         capturing = False
-        log_lines = []
-        
-        while True:
-            try:
-                line = ser.readline().decode('utf-8', errors='replace').rstrip()
-            except UnicodeDecodeError:
-                continue
-            
-            if not line:
-                continue
-            
-            # Print to console for monitoring
-            vprint(1, f"  {line}")
-            
-            # Check for start marker
-            if START_MARKER in line and not capturing:
-                vprint(1, f"\n>>> Start marker detected! Beginning capture...")
-                capturing = True
-                log_lines.append(line)
-                continue
-            
-            # If capturing, save lines
-            if capturing:
-                log_lines.append(line)
-                
-                # Check for end marker
-                if END_MARKER in line:
-                    vprint(1, f">>> End marker detected! Capture complete.\n")
-                    break
-        
-        # Write to log file
+        start_time = time.time()
+        line_count = 0
+
+        # Open file immediately so we can stream data directly to disk
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(log_file, 'a') as f:
             f.write(f"\n{'='*60}\n")
             f.write(f"Test run at {timestamp}\n")
             f.write(f"{'='*60}\n")
-            for line in log_lines:
-                f.write(line + '\n')
-            f.write('\n')
-        
-        vprint(1, f"Logged {len(log_lines)} lines to {log_file}")
-        
+
+            while True:
+                if time.time() - start_time > TIMEOUT and not capturing:
+                    print(f"Timeout waiting for start marker after {TIMEOUT}s")
+                    return False
+
+                try:
+                    line = ser.readline().decode('utf-8', errors='replace').rstrip()
+                except UnicodeDecodeError:
+                    continue
+
+                if not line:
+                    continue
+
+                # Check for start marker
+                if START_MARKER in line and not capturing:
+                    vprint(1, f"\n>>> Start marker detected! Beginning capture (silencing console)...")
+                    capturing = True
+                    start_time = time.time()  # Reset timeout for end marker
+                    continue
+
+                # If capturing, 
+                if capturing:
+                    # Check for end marker
+                    if END_MARKER in line:
+                        vprint(1, f"\n>>> End marker detected! Capture complete.\n")
+                        break
+
+                    f.write(line + '\n')
+                    line_count += 1
+
+                    # some visual feedback is nice
+                    if line_count % 1000 == 0:
+                        sys.stdout.write('*')
+                        sys.stdout.flush()
+
+                # Timeout check while capturing
+                if capturing and time.time() - start_time > TIMEOUT:
+                    print(f"\nTimeout waiting for end marker after {TIMEOUT}s")
+                    vprint(1, "Saving partial log...")
+                    break
+
+        vprint(1, f"Logged {line_count} lines to {log_file}")
         ser.close()
         return True
         
