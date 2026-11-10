@@ -171,7 +171,6 @@ if [[ "${BUILD_TYPE}" == "ns" ]]; then
           --boot-record boot \
           ${NSPE_MSTP_APP}/src/NonSecure/build/tfm_ns.bin \
           ${BUILD_NS_BIN}/tfm_ns_signed.bin
-          #${BUILD_S}/api_ns/image_signing/scripts/tfm_ns_signed.bin
 fi
 
 #-------------------------------------------------------------------------------
