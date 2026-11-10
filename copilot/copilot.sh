@@ -149,7 +149,9 @@ fi
 #-------------------------------------------------------------------------------
 if [[ "${BUILD_TYPE}" == "ns" ]]; then
         BUILD_S="${ROOT}/build/${PLATFORM}_${PROFILE}_s"
-            
+        BUILD_NS_BIN="${ROOT}/build/build_ns/bin"
+        mkdir -p "${BUILD_NS_BIN}"
+
         cmake --build ${NSPE_MSTP_APP}/build
 
         arm-none-eabi-objcopy -O binary \
@@ -168,7 +170,7 @@ if [[ "${BUILD_TYPE}" == "ns" ]]; then
           --pad \
           --boot-record boot \
           ${NSPE_MSTP_APP}/src/NonSecure/build/tfm_ns.bin \
-          ${BUILD_S}/api_ns/image_signing/scripts/tfm_ns_signed.bin
+          ${BUILD_NS_BIN}/tfm_ns_signed.bin
 fi
 
 #-------------------------------------------------------------------------------
@@ -193,10 +195,10 @@ if $DEPLOY; then
         # power cycles, so you can leave this line commented out after the 
         # initial setup.
         #
-        # ${TFM_SPE}/api_ns/regression.sh
+        ${TFM_SPE}/api_ns/regression.sh
         #-----------------------------------------------------------------------
 
-        ${TFM_SPE}/api_ns/TFM_UPDATE.sh      
+        (cd "${TFM_SPE}/api_ns" && ./TFM_UPDATE.sh)
 fi
 
 #-------------------------------------------------------------------------------
@@ -222,4 +224,3 @@ if $VISUALIZER; then
     ${MSTP}/mstp-visualizer/1-gen-vcd.sh -t ${RAW_TRACE} -elf ${ELF} -o ${VIS_OUT}
     ${MSTP}/mstp-visualizer/2-gtkwave.sh -i ${VIS_OUT}/trace.vcd
 fi
-
