@@ -6,8 +6,15 @@ INPUTS=${ROOT}/../traces/tfm-inv-mod-001
 OUTPUTS=${ROOT}/outputs
 PATTERNS=${ROOT}/patterns
 TRACE=${INPUTS}/trace.txt  # Default trace file
-TRACE_NUM=${OUTPUTS}/trace_num.txt  
+TRACE_NUM=${OUTPUTS}/trace_num.txt
 VERBOSITY=0  # Default verbosity level
+RAW_MODE=0 # Set by -r/--raw
+MODULUS="" # Optional public modulus N in hex for jitter correction
+MODULUS_FROM="" # Optional file to read the modulus from
+SHIFTS_PATTERN=${PATTERNS}/patterns-shifts-inv-mod.txt # debug-trace shift templates (debug is default default)
+CMP_START=${PATTERNS}/pattern-cmp-inv-mod-start.txt
+CMP_END=${PATTERNS}/pattern-cmp-inv-mod-end.txt
+CMP_PATTERN=${PATTERNS}/patterns-cmp-inv-mod.txt
 
 #-------------------------------------------------------------------------------
 # Parse arguments
@@ -32,6 +39,30 @@ while [[ $# -gt 0 ]]; do
             VERBOSITY="$2"
             shift 2
             ;;
+        -r|--raw)
+            SHIFTS_PATTERN=${PATTERNS}/patterns-shifts-inv-mod-raw.txt
+            CMP_START=${PATTERNS}/pattern-cmp-inv-mod-start-raw.txt
+            CMP_END=${PATTERNS}/pattern-cmp-inv-mod-end-raw.txt
+            CMP_PATTERN=${PATTERNS}/patterns-cmp-inv-mod-raw.txt
+            RAW_MODE=1
+            shift
+            ;;
+        -n|--modulus)
+            if [[ -z "$2" ]]; then
+                echo "Error: --modulus requires a hex value"
+                exit 1
+            fi
+            MODULUS="$2"
+            shift 2
+            ;;
+        --modulus-from)
+            if [[ -z "$2" ]]; then
+                echo "Error: --modulus-from requires a file path"
+                exit 1
+            fi
+            MODULUS_FROM="$2"
+            shift 2
+            ;;
         -h|--help)
             echo "Usage: $0 [-t|--trace TRACE_FILE] [-v|--verbosity LEVEL]"
             echo ""
@@ -40,6 +71,14 @@ while [[ $# -gt 0 ]]; do
             echo "  -v, --verbosity LEVEL     Set verbosity level (0 or 1, default: 0)"
             echo "                           0: Show only final output"
             echo "                           1: Show all script outputs"
+            echo "  -r, --raw                 Use shift templates for a"
+            echo "                           production trace (MSTP_RAW_PRODUCTION_TRACE)."
+            echo "                           attemps to adapt the raw templates if patterns differ"
+            echo "  -n, --modulus HEX         publicRSA modulus N (hex). Verifies the"
+            echo "                           recovered primes against N and auto-corrects"
+            echo "                           single-step jitter errors"
+            echo "  --modulus-from FILE       Read the PUBLIC modulus N from FILE (an"
+            echo "                           'N = ...' line, or two prime lines)"
             echo "  -h, --help               Show this help message"
             echo ""
             echo "Examples:"
@@ -47,6 +86,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 -v 1                              # Show all outputs"
             echo "  $0 -t /path/to/my_trace.txt -v 1     # Custom trace with full output"
             echo "  $0 --trace ./custom_trace.txt --verbosity 0  # Custom trace, quiet mode"
+            echo "  $0 -r -t ./rsaRaw.txt                # Raw production trace"
             exit 0
             ;;
         *)
@@ -67,6 +107,20 @@ fi
 echo "Processing trace file: $TRACE"
 
 #-------------------------------------------------------------------------------
+# raw mode, if no mosulus was supplied, it is used from the trace itself.
+# if the header doesnt contain any keys to derive it from than it has to be given
+# explicitly
+#-------------------------------------------------------------------------------
+if [[ $RAW_MODE -eq 1 && -z "$MODULUS" && -z "$MODULUS_FROM" ]]; then
+    if grep -qiE '^[[:space:]]*(N|p|q)[[:space:]]*=[[:space:]]*(0x)?[0-9a-fA-F]+' "$TRACE"; then
+        MODULUS_FROM="$TRACE"
+        if [[ $VERBOSITY -eq 1 ]]; then
+            echo "Raw mode: auto-using PUBLIC modulus from trace header ($TRACE)"
+        fi
+    fi
+fi
+
+#-------------------------------------------------------------------------------
 # Add "time" info to the trace to be able to later be able to process the gathered
 # patterns in the sequence the underlying operations they represent were executed.
 #-------------------------------------------------------------------------------
@@ -85,6 +139,32 @@ else
 fi
 
 #-------------------------------------------------------------------------------
+# raw mode, auto adapt templates, since the captures might differ on different builds
+#-------------------------------------------------------------------------------
+if [[ $RAW_MODE -eq 1 ]]; then
+    ADAPTED=${OUTPUTS}/adapted-patterns
+    mkdir -p "${ADAPTED}"
+    if [[ $VERBOSITY -eq 0 ]]; then
+        python3 ${PY_SCRIPTS}/adapt-patterns.py        \
+                --trace ${TRACE}                       \
+                --out-dir ${ADAPTED}                   \
+                --ref-period 11                        \
+                --patterns ${SHIFTS_PATTERN} ${CMP_START} ${CMP_END} ${CMP_PATTERN} \
+                >/dev/null 2>&1
+    else
+        python3 ${PY_SCRIPTS}/adapt-patterns.py        \
+                --trace ${TRACE}                       \
+                --out-dir ${ADAPTED}                   \
+                --ref-period 11                        \
+                --patterns ${SHIFTS_PATTERN} ${CMP_START} ${CMP_END} ${CMP_PATTERN}
+    fi
+    SHIFTS_PATTERN=${ADAPTED}/$(basename ${SHIFTS_PATTERN})
+    CMP_START=${ADAPTED}/$(basename ${CMP_START})
+    CMP_END=${ADAPTED}/$(basename ${CMP_END})
+    CMP_PATTERN=${ADAPTED}/$(basename ${CMP_PATTERN})
+fi
+
+#-------------------------------------------------------------------------------
 # Get the shifts u and shift v patterns
 #-------------------------------------------------------------------------------
 
@@ -100,14 +180,14 @@ fi
 if [[ $VERBOSITY -eq 0 ]]; then
     python3 ${PY_SCRIPTS}/find-patterns.py                      \
             --trace ${TRACE_NUM}                                \
-            --pattern ${PATTERNS}/patterns-shifts-inv-mod.txt   \
+            --pattern ${SHIFTS_PATTERN}                           \
             --output ${OUTPUTS}                                 \
             --pattern-list                                      \
             --verbosity 0 >/dev/null 2>&1
 else
     python3 ${PY_SCRIPTS}/find-patterns.py                      \
             --trace ${TRACE_NUM}                                \
-            --pattern ${PATTERNS}/patterns-shifts-inv-mod.txt   \
+            --pattern ${SHIFTS_PATTERN}                           \
             --output ${OUTPUTS}                                 \
             --pattern-list                                      \
             --verbosity 0   
@@ -124,15 +204,15 @@ fi
 if [[ $VERBOSITY -eq 0 ]]; then
     python3 ${PY_SCRIPTS}/find-patterns.py                              \
             --trace ${TRACE_NUM}                                        \
-            --pattern-start ${PATTERNS}/pattern-cmp-inv-mod-start.txt   \
-            --pattern-end ${PATTERNS}/pattern-cmp-inv-mod-end.txt       \
+            --pattern-start ${CMP_START}                                 \
+            --pattern-end ${CMP_END}                                     \
             --output ${OUTPUTS}                                         \
             --verbosity 0 >/dev/null 2>&1
 else
     python3 ${PY_SCRIPTS}/find-patterns.py                              \
             --trace ${TRACE_NUM}                                        \
-            --pattern-start ${PATTERNS}/pattern-cmp-inv-mod-start.txt   \
-            --pattern-end ${PATTERNS}/pattern-cmp-inv-mod-end.txt       \
+            --pattern-start ${CMP_START}                                 \
+            --pattern-end ${CMP_END}                                     \
             --output ${OUTPUTS}                                         \
             --verbosity 0
 fi
@@ -145,14 +225,14 @@ fi
 if [[ $VERBOSITY -eq 0 ]]; then
     python3 ${PY_SCRIPTS}/find-patterns.py                                  \
             --trace ${OUTPUTS}/pattern-match-pattern-cmp-inv-mod-start.txt  \
-            --pattern ${PATTERNS}/patterns-cmp-inv-mod.txt                  \
+            --pattern ${CMP_PATTERN}                                         \
             --output ${OUTPUTS}                                             \
             --pattern-list                                                  \
             --verbosity 0 >/dev/null 2>&1
 else
     python3 ${PY_SCRIPTS}/find-patterns.py                                  \
             --trace ${OUTPUTS}/pattern-match-pattern-cmp-inv-mod-start.txt  \
-            --pattern ${PATTERNS}/patterns-cmp-inv-mod.txt                  \
+            --pattern ${CMP_PATTERN}                                         \
             --output ${OUTPUTS}                                             \
             --pattern-list                                                  \
             --verbosity 0
@@ -189,5 +269,11 @@ echo "Recovered private key prime numbers:"
 echo ""
 
 # The last script always shows output regardless of verbosity level
-python3 ${PY_SCRIPTS}/recover-keys-inv-mod.py \
-        --patterns ${OUTPUTS}/patterns-list-results.txt
+# (-n/--modulus and --modulus-from supply the public modulus for jitter correction)
+RECOVER_ARGS=(--patterns ${OUTPUTS}/patterns-list-results.txt)
+if [[ -n "$MODULUS" ]]; then
+    RECOVER_ARGS+=(--modulus "${MODULUS}")
+elif [[ -n "$MODULUS_FROM" ]]; then
+    RECOVER_ARGS+=(--modulus-from "${MODULUS_FROM}")
+fi
+python3 ${PY_SCRIPTS}/recover-keys-inv-mod.py "${RECOVER_ARGS[@]}"

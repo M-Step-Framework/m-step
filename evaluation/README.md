@@ -158,6 +158,28 @@ cd t6_pocs
 - `logs/trace_poc2.txt`: Trace from PoC #2
 - You will see the extracted RSA prime factors (P, Q) on the terminal.
 
+**Trace mode (production vs debug):**
+
+The PoCs run in **debug mode by default**: the framework drops zero-steps via a
+secure-PC read, giving a clean trace. Production (raw) mode,
+which is the realistic attacker scenario prints every step without reading the secure PC
+and is analyzed with the raw templates (`-r`); enable it with `./1-run-pocs.sh -r`.
+
+The build mode and the analyzer flag must agree. They are paired as follows:
+
+| Mode | `MSTP_DEBUG` (in `src-poc/m-step/mstp/inc/mstp.h`) | `1-run-pocs.sh` |
+|------|---------------------------------------------------|-----------------|
+| Debug (default) | `DEBUG_ON` | `./1-run-pocs.sh` (analyzer uses debug templates) |
+| Production | `DEBUG_OFF` | `./1-run-pocs.sh -r` (analyzer uses `-r`) |
+
+To switch modes, change the single `MSTP_DEBUG` line in `mstp.h` **and** use the
+matching run-script flag, then rebuild.
+
+Since in production mode, the exact trace might differ on different builds, the analyzer
+adapts the raw templates to it. It also makes use of the public modulus N to auto-correct
+small jitter which occured in PoC2.
+for PoC1, N is derived from the header, while PoC2 expects a given N (`--modulus-from`)
+
 
 ### T7: GTKWave Visualization Tests
 

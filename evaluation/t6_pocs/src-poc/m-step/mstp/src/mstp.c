@@ -50,7 +50,7 @@ mstp_conf_t mstp_conf[2] = {
         .ici_streak_threshold   = ICI_STREAK_THRESHOLD,
         .preemptions_threshold  = PREEMPTIONS_THRESHOLD,
         .base_inst_time         = BASE_INST_TIME,   
-        .debug                  = DEBUG_ON,
+        .debug                  = MSTP_DEBUG,
     },
     /* S configuration [1] */
     {
@@ -61,7 +61,7 @@ mstp_conf_t mstp_conf[2] = {
         .ici_streak_threshold   = ICI_STREAK_THRESHOLD,
         .preemptions_threshold  = PREEMPTIONS_THRESHOLD,
         .base_inst_time         = BASE_INST_TIME,   
-        .debug                  = DEBUG_ON,
+        .debug                  = MSTP_DEBUG,
     },
     /* S configuration FPU [2] */
     {
@@ -72,7 +72,7 @@ mstp_conf_t mstp_conf[2] = {
         .ici_streak_threshold   = ICI_STREAK_THRESHOLD,
         .preemptions_threshold  = PREEMPTIONS_THRESHOLD,
         .base_inst_time         = BASE_INST_TIME,   
-        .debug                  = DEBUG_ON,
+        .debug                  = MSTP_DEBUG,
     }
 };
 
@@ -211,8 +211,8 @@ void single_step(void){
     //--------------------------------------------------------------------------
     if(mstp_conf[mstp_conf_index].debug)
         process_metrics_debug((uint32_t *)sp, &mstp_ctx, &lr_exc_return);
-    // else 
-    //     process_metrics_production((uint32_t *)sp, &mstp_ctx, &lr_exc_return);
+    else
+        process_metrics_production((uint32_t *)sp, &mstp_ctx, &lr_exc_return);
     
     //--------------------------------------------------------------------------
     // Check if we reach the end of our trace. We can compare it to the PC on

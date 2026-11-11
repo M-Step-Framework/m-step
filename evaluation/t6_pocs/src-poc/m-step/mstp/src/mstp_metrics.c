@@ -85,8 +85,21 @@ void print_pc_time(uint32_t pc, mstp_ctx_t *mstp_ctx, char secure_stack) {
 }
 
 //--------------------------------------------------------------------------
-// Single Step Metrics 
-// - Get the Next Instruction PC to see we are single-stepping or not 
+// Single Step Metrics Production Mode (raw / unfiltered)
+// - Unlike debug mode, we do NOT read the stacked PC to classify and drop
+//   zero-steps (that read goes through the secure world). Every step taken on
+//   the secure stack is emitted, producing the RAW production trace (zero-steps
+//   kept). Analyze it with the raw templates: 1-analyze-trace.sh -r
+//--------------------------------------------------------------------------
+void process_metrics_production(uint32_t sp, mstp_ctx_t *mstp_ctx, lr_t *lr_exc_return){
+	(void)sp;
+	if(lr_exc_return->secure_stack == S_STACK)
+		printf("%02d\r\n", mstp_ctx->inst_time);
+}
+
+//--------------------------------------------------------------------------
+// Single Step Metrics
+// - Get the Next Instruction PC to see we are single-stepping or not
 //--------------------------------------------------------------------------
 uint32_t memory_bkpt = 0;
 void process_metrics_debug(uint32_t sp, mstp_ctx_t *mstp_ctx, lr_t *lr_exc_return){

@@ -88,11 +88,57 @@ def read_keys_file(filename):
     return p, q
 
 
+def read_modulus_file(filename):
+    """Obtain the public modulus N from a key file either directly or by computing p*q in the trace"""
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"Key file not found: {filename}")
+    with open(filename, 'r') as f:
+        content = f.read()
+    primes = []
+    for line in content.split('\n'):
+        line = line.strip()
+        m = re.match(r'(?i)^N\s*=\s*0?x?([0-9a-fA-F]+)', line)
+        if m:
+            return int(m.group(1), 16)
+        m = re.match(r'(?i)^[pq]\s*=\s*0?x?([0-9a-fA-F]+)', line)
+        if m:
+            primes.append(int(m.group(1), 16))
+            if len(primes) == 2:
+                break
+    if len(primes) == 2:
+        return primes[0] * primes[1]
+    raise ValueError(f"Could not find N or two primes in {filename}")
+
+
+def correct_with_modulus(SHIFTS_u, SHIFTS_v, SUBS, N, max_delta=2):
+    """shift correction with max delta against the public modulus N """
+    for name, base in (("SHIFTS_u", SHIFTS_u), ("SHIFTS_v", SHIFTS_v)):
+        for i in range(len(base)):
+            orig = base[i]
+            for d in range(1, max_delta + 1):
+                for delta in (d, -d):
+                    nv = orig + delta
+                    if nv < 0:
+                        continue
+                    base[i] = nv
+                    u, v = my_algorithm(SHIFTS_u, SHIFTS_v, SUBS)
+                    if v * u == N:
+                        base[i] = orig
+                        note = f"corrected {name}[{i}] {orig}->{nv}"
+                        return v, u, note
+            base[i] = orig
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description='RSA Key Recovery Tool')
     parser.add_argument('-p', '--patterns', required=True, 
                        help='File containing SHIFTS_u, SHIFTS_v, and SUBS arrays')
-    
+    parser.add_argument('-n', '--modulus', default=None,
+                       help='public RSA modulus N, makes production trace jitter errors correctlable')
+    parser.add_argument('--modulus-from', default=None,
+                       help='File to read the public modulus N from (alternitive to -n)')
+
     args = parser.parse_args()
     
     try:
@@ -101,10 +147,29 @@ def main():
         
         # Run the algorithm
         u, v = my_algorithm(SHIFTS_u, SHIFTS_v, SUBS)
-        
-        p = v 
-        q = u  
-                
+
+        p = v
+        q = u
+
+        N = None
+        if args.modulus is not None:
+            N = int(args.modulus, 16)
+        elif args.modulus_from is not None:
+            N = read_modulus_file(args.modulus_from)
+
+        if N is not None:
+            if p * q == N:
+                print("exact recovery and verified against n)")
+            else:
+                print("applying jitter correction")
+                fix = correct_with_modulus(SHIFTS_u, SHIFTS_v, SUBS, N)
+                if fix is None:
+                    print("no correction satisfies n, printing uncorrected recovery ",
+                          file=sys.stderr)
+                else:
+                    p, q, note = fix
+                    print(f"{note}; keys found with correction")
+
         # Output only the recovered p and q
         print(f"p = 0x{p:x}")
         print(f"q = 0x{q:x}")
